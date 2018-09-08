@@ -29,6 +29,8 @@
 
 #include "io/serial.h"
 
+#include <stdarg.h>
+
 void run(void);
 
 int main(void)
@@ -49,4 +51,29 @@ void FAST_CODE FAST_CODE_NOINLINE run(void)
         delayMicroseconds_real(50); // max rate 20kHz
 #endif
     }
+}
+
+serialPort_t * myDebugPort;
+
+void myDebug(void)
+{
+     extern serialPort_t * myDebugPort;
+
+     char * msg = "Hello\n";
+
+     for (char *p=msg; *p; p++) { 
+         serialWrite(myDebugPort, *p);
+     }
+}
+
+void myPrintf(const char * fmt, ...)
+{
+    int vsnprintf(char *str, size_t size, const char *format, va_list ap);
+
+    va_list ap;
+    va_start(ap, fmt);
+    char buf[200];
+    vsnprintf(buf, 200, fmt, ap); 
+    //Board::outbuf(buf);
+    va_end(ap);
 }

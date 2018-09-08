@@ -39,6 +39,8 @@
 
 #include "msp/msp_serial.h"
 
+#include <stdarg.h>
+
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bool sharedWithTelemetry)
@@ -49,10 +51,12 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bo
     mspPortToReset->sharedWithTelemetry = sharedWithTelemetry;
 }
 
-serialPort_t * myDebugPort;
+
 
 void mspSerialAllocatePorts(void)
 {
+    extern serialPort_t * myDebugPort;
+
     uint8_t portIndex = 0;
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
     while (portConfig && portIndex < MAX_MSP_PORT_COUNT) {
@@ -425,15 +429,6 @@ static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspPr
     return mspPostProcessFn;
 }
 
-static void myDebug(char * msg)
-{
-     extern serialPort_t * myDebugPort;
-
-     for (char *p=msg; *p; p++) { 
-         serialWrite(myDebugPort, *p);
-     }
-}
-
 static void mspEvaluateNonMspData(mspPort_t * mspPort, uint8_t receivedChar)
 {
 #ifdef USE_CLI
@@ -495,7 +490,8 @@ static void mspSerialProcessReceivedReply(mspPort_t *msp, mspProcessReplyFnPtr m
  */
 void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessCommandFnPtr mspProcessCommandFn, mspProcessReplyFnPtr mspProcessReplyFn)
 {
-    myDebug("Hello!\n");
+    extern void myDebug(void);
+    myDebug();
 
     for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t * const mspPort = &mspPorts[portIndex];
