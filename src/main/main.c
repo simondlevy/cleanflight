@@ -55,25 +55,31 @@ void FAST_CODE FAST_CODE_NOINLINE run(void)
 
 serialPort_t * myDebugPort;
 
-void myDebug(void)
+static void myPrintf(const char * fmt, ...)
 {
      extern serialPort_t * myDebugPort;
 
-     char * msg = "Hello\n";
-
-     for (char *p=msg; *p; p++) { 
-         serialWrite(myDebugPort, *p);
-     }
-}
-
-void myPrintf(const char * fmt, ...)
-{
     int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 
     va_list ap;
     va_start(ap, fmt);
     char buf[200];
     vsnprintf(buf, 200, fmt, ap); 
-    //Board::outbuf(buf);
+    for (char *p=buf; *p; p++) { 
+        serialWrite(myDebugPort, *p);
+    }
     va_end(ap);
 }
+
+void myDebug(void)
+{
+   extern serialPort_t * myDebugPort;
+
+    char * buf = "Hello world!\n";
+
+    for (char *p=buf; *p; p++) { 
+        serialWrite(myDebugPort, *p);
+    }
+ }
+
+
