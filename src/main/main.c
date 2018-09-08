@@ -29,8 +29,6 @@
 
 #include "io/serial.h"
 
-#include <stdarg.h>
-
 void run(void);
 
 int main(void)
@@ -55,31 +53,17 @@ void FAST_CODE FAST_CODE_NOINLINE run(void)
 
 serialPort_t * myDebugPort;
 
-static void myPrintf(const char * fmt, ...)
-{
-     extern serialPort_t * myDebugPort;
-
-    int vsnprintf(char *str, size_t size, const char *format, va_list ap);
-
-    va_list ap;
-    va_start(ap, fmt);
-    char buf[200];
-    vsnprintf(buf, 200, fmt, ap); 
-    for (char *p=buf; *p; p++) { 
-        serialWrite(myDebugPort, *p);
-    }
-    va_end(ap);
-}
-
 void myDebug(void)
 {
-   extern serialPort_t * myDebugPort;
+    extern serialPort_t * myDebugPort;
+    extern void tfp_sprintf(char* s,char *fmt, ...);
 
-    char * buf = "Hello world!\n";
+    char buf[100];
+    tfp_sprintf(buf, "Hello there!\n");
 
     for (char *p=buf; *p; p++) { 
         serialWrite(myDebugPort, *p);
     }
- }
+}
 
 
