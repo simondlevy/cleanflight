@@ -28,6 +28,7 @@
 #include "scheduler/scheduler.h"
 
 #include "io/serial.h"
+#include "drivers/pwm_output.h"
 
 void run(void);
 
@@ -51,15 +52,16 @@ void FAST_CODE FAST_CODE_NOINLINE run(void)
     }
 }
 
-serialPort_t * myDebugPort;
-
 void myDebug(void)
 {
     extern serialPort_t * myDebugPort;
     extern void tfp_sprintf(char* s,char *fmt, ...);
 
+    extern motorDevConfig_t myMotorConfig;
+    extern uint16_t myIdlePulse;
+
     char buf[100];
-    tfp_sprintf(buf, "Hello there!\n");
+    tfp_sprintf(buf, "idle pulse: %d\n", myIdlePulse);
 
     for (char *p=buf; *p; p++) { 
         serialWrite(myDebugPort, *p);

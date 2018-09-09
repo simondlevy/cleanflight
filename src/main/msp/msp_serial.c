@@ -52,11 +52,10 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bo
 }
 
 
+serialPort_t * myDebugPort;
 
 void mspSerialAllocatePorts(void)
 {
-    extern serialPort_t * myDebugPort;
-
     uint8_t portIndex = 0;
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
     while (portConfig && portIndex < MAX_MSP_PORT_COUNT) {

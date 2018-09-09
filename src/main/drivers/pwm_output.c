@@ -232,11 +232,14 @@ void pwmCompleteMotorUpdate(uint8_t motorCount)
     pwmCompleteWrite(motorCount);
 }
 
-uint8_t myMotorPwmProtocol;
+motorDevConfig_t myMotorConfig;
+uint16_t myIdlePulse;
 
 void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
 {
-    myMotorPwmProtocol = motorConfig->motorPwmProtocol;
+    memcpy(&myMotorConfig, motorConfig, sizeof(motorDevConfig_t));
+
+    myIdlePulse = idlePulse;
 
     memset(motors, 0, sizeof(motors));
 
