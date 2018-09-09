@@ -55,13 +55,11 @@ void FAST_CODE FAST_CODE_NOINLINE run(void)
 void myDebug(void)
 {
     extern serialPort_t * myDebugPort;
+    extern uint32_t myCount;
     extern void tfp_sprintf(char* s,char *fmt, ...);
 
-    extern motorDevConfig_t myMotorConfig;
-    extern uint16_t myIdlePulse;
-
     char buf[100];
-    tfp_sprintf(buf, "idle pulse: %d\n", myIdlePulse);
+    tfp_sprintf(buf, "%d\n", myCount);
 
     for (char *p=buf; *p; p++) { 
         serialWrite(myDebugPort, *p);

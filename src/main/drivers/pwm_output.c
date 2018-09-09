@@ -215,6 +215,8 @@ static void pwmCompleteWriteUnused(uint8_t motorCount)
     UNUSED(motorCount);
 }
 
+uint32_t myCount;
+
 static void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
 {
     for (int index = 0; index < motorCount; index++) {
@@ -225,6 +227,8 @@ static void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
         // This compare register will be set to the output value on the next main loop.
         *motors[index].channel.ccr = 0;
     }
+
+    myCount++;
 }
 
 void pwmCompleteMotorUpdate(uint8_t motorCount)
