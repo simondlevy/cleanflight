@@ -16,7 +16,7 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET    ?= OMNIBUS
+TARGET    ?= FURYF4OSD
 
 # Compile-time options
 OPTIONS   ?=
