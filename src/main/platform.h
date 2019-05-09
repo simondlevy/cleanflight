@@ -115,3 +115,5 @@
 #include "target/common_fc_post.h"
 #endif
 #include "target/common_defaults_post.h"
+
+void myprintf(const char * fmt, ...);

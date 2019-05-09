@@ -489,8 +489,6 @@ static void mspSerialProcessReceivedReply(mspPort_t *msp, mspProcessReplyFnPtr m
  */
 void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessCommandFnPtr mspProcessCommandFn, mspProcessReplyFnPtr mspProcessReplyFn)
 {
-    extern void myprintf(const char * fmt, ...);
-
     static uint32_t count;
     myprintf("hello %d\n", count++);
 
