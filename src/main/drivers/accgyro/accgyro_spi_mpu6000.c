@@ -358,33 +358,6 @@ void mpuDetect(gyroDev_t *gyro)
     // MPU datasheet specifies 30ms.
     delay(35);
 
-    if (gyro->bus.bustype == BUSTYPE_NONE) {
-        // if no bustype is selected try I2C first.
-        gyro->bus.bustype = BUSTYPE_I2C;
-    }
-
-    if (gyro->bus.bustype == BUSTYPE_I2C) {
-        gyro->bus.busdev_u.i2c.device = MPU_I2C_INSTANCE;
-        gyro->bus.busdev_u.i2c.address = MPU_ADDRESS;
-
-        uint8_t sig = 0;
-        bool ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_WHO_AM_I, &sig, 1);
-
-        if (ack) {
-            // If an MPU3050 is connected sig will contain 0.
-            uint8_t inquiryResult;
-            ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_WHO_AM_I_LEGACY, &inquiryResult, 1);
-            inquiryResult &= MPU_INQUIRY_MASK;
-            if (ack && inquiryResult == MPUx0x0_WHO_AM_I_CONST) {
-                gyro->mpuDetectionResult.sensor = MPU_3050;
-                return;
-            }
-
-            sig &= MPU_INQUIRY_MASK;
-            return;
-        }
-    }
-
     gyro->bus.bustype = BUSTYPE_SPI;
     detectSPISensorsAndUpdateDetectionResult(gyro);
 }

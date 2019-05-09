@@ -21,6 +21,7 @@
 #pragma once
 
 #include "drivers/bus.h"
+#include "drivers/exti.h"
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 

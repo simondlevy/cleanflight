@@ -4,13 +4,7 @@
 #include "drivers/exti.h"
 #include "drivers/sensor.h"
 
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-
 #define GYRO_USES_SPI
-
-// MPU6050
-#define MPU_RA_WHO_AM_I         0x75
-#define MPU_RA_WHO_AM_I_LEGACY  0x00
 
 #define MPUx0x0_WHO_AM_I_CONST              (0x68) // MPU3050, 6000 and 6050
 #define MPU6000_WHO_AM_I_CONST              (0x68)
