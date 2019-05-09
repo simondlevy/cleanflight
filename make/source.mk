@@ -196,7 +196,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/filter.c \
             common/maths.c \
             common/typeconversion.c \
-            drivers/accgyro/accgyro_mpu.c \
             drivers/accgyro/accgyro_spi_mpu6000.c \
             drivers/adc.c \
             drivers/buf_writer.c \

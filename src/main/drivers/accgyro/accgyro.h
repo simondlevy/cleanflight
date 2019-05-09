@@ -28,7 +28,9 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "sensors/gyro.h"
+
 #pragma GCC diagnostic push
+
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
 #include <pthread.h>
 #elif !defined(UNIT_TEST)
@@ -56,9 +58,6 @@ typedef enum {
 } gyroRateKHz_e;
 
 typedef struct gyroDev_s {
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    pthread_mutex_t lock;
-#endif
     sensorGyroInitFuncPtr initFn;                             // initialize function
     sensorGyroReadFuncPtr readFn;                             // read 3 axis data function
     sensorGyroReadDataFuncPtr temperatureFn;                  // read temperature if available
@@ -86,9 +85,6 @@ typedef struct gyroDev_s {
 } gyroDev_t;
 
 typedef struct accDev_s {
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    pthread_mutex_t lock;
-#endif
     sensorAccInitFuncPtr initFn;                              // initialize function
     sensorAccReadFuncPtr readFn;                              // read 3 axis data function
     busDevice_t bus;
@@ -104,37 +100,21 @@ typedef struct accDev_s {
 
 static inline void accDevLock(accDev_t *acc)
 {
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    pthread_mutex_lock(&acc->lock);
-#else
     (void)acc;
-#endif
 }
 
 static inline void accDevUnLock(accDev_t *acc)
 {
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    pthread_mutex_unlock(&acc->lock);
-#else
     (void)acc;
-#endif
 }
 
 static inline void gyroDevLock(gyroDev_t *gyro)
 {
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    pthread_mutex_lock(&gyro->lock);
-#else
     (void)gyro;
-#endif
 }
 
 static inline void gyroDevUnLock(gyroDev_t *gyro)
 {
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    pthread_mutex_unlock(&gyro->lock);
-#else
     (void)gyro;
-#endif
 }
 #pragma GCC diagnostic pop

@@ -1,23 +1,3 @@
-/*
- * This file is part of Cleanflight and Betaflight.
- *
- * Cleanflight and Betaflight are free software. You can redistribute
- * this software and/or modify this software under the terms of the
- * GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.
- *
- * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this software.
- *
- * If not, see <http://www.gnu.org/licenses/>.
- */
-
 #pragma once
 
 #include "drivers/bus.h"
@@ -26,10 +6,7 @@
 
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 
-#if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) ||  defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20649) \
- || defined(USE_GYRO_SPI_ICM20689)
 #define GYRO_USES_SPI
-#endif
 
 // MPU6050
 #define MPU_RA_WHO_AM_I         0x75
@@ -37,14 +14,6 @@
 
 #define MPUx0x0_WHO_AM_I_CONST              (0x68) // MPU3050, 6000 and 6050
 #define MPU6000_WHO_AM_I_CONST              (0x68)
-#define MPU6500_WHO_AM_I_CONST              (0x70)
-#define MPU9250_WHO_AM_I_CONST              (0x71)
-#define MPU9255_WHO_AM_I_CONST              (0x73)
-#define ICM20601_WHO_AM_I_CONST             (0xAC)
-#define ICM20602_WHO_AM_I_CONST             (0x12)
-#define ICM20608G_WHO_AM_I_CONST            (0xAF)
-#define ICM20649_WHO_AM_I_CONST             (0xE1)
-#define ICM20689_WHO_AM_I_CONST             (0x98)
 
 // RA = Register Address
 

@@ -55,10 +55,8 @@ void mydebug(void)
 {
     extern void tfp_sprintf(char* s,char *fmt, ...);
 
-    extern uint8_t foo;
-
     char buf[100];
-    tfp_sprintf(buf, "%d\n", foo);
+    //tfp_sprintf(buf, "%d\n", foo);
 
     //myputs(buf);
 
