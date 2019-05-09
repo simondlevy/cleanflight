@@ -109,7 +109,7 @@ static bool mpuSpi6000InitDone = false;
 
 mpuResetFnPtr mpuResetFn;
 
-// Private ======================================================================================
+// Private: ======================================================================================
 
 static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
 {
@@ -199,8 +199,41 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     return true;
 }
 
+static void mpuGyroRead(gyroDev_t *gyro)
+{
+    uint8_t data[6];
 
-// Public  ======================================================================================
+    const bool ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_GYRO_XOUT_H, data, 6);
+    if (!ack) {
+        return false;
+    }
+
+    gyro->gyroADCRaw[X] = (int16_t)((data[0] << 8) | data[1]);
+    gyro->gyroADCRaw[Y] = (int16_t)((data[2] << 8) | data[3]);
+    gyro->gyroADCRaw[Z] = (int16_t)((data[4] << 8) | data[5]);
+
+    return true;
+}
+
+bool mpuGyroReadSPI(gyroDev_t *gyro)
+{
+    static const uint8_t dataToSend[7] = {MPU_RA_GYRO_XOUT_H | 0x80, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    uint8_t data[7];
+
+    const bool ack = spiBusTransfer(&gyro->bus, dataToSend, data, 7);
+    if (!ack) {
+        return false;
+    }
+
+    gyro->gyroADCRaw[X] = (int16_t)((data[1] << 8) | data[2]);
+    gyro->gyroADCRaw[Y] = (int16_t)((data[3] << 8) | data[4]);
+    gyro->gyroADCRaw[Z] = (int16_t)((data[5] << 8) | data[6]);
+
+    return true;
+}
+
+
+// Public:  ======================================================================================
 
 void mpu6000SpiGyroInit(gyroDev_t *gyro)
 {
@@ -305,39 +338,6 @@ bool mpuAccRead(accDev_t *acc)
     acc->ADCRaw[X] = (int16_t)((data[0] << 8) | data[1]);
     acc->ADCRaw[Y] = (int16_t)((data[2] << 8) | data[3]);
     acc->ADCRaw[Z] = (int16_t)((data[4] << 8) | data[5]);
-
-    return true;
-}
-
-bool mpuGyroRead(gyroDev_t *gyro)
-{
-    uint8_t data[6];
-
-    const bool ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_GYRO_XOUT_H, data, 6);
-    if (!ack) {
-        return false;
-    }
-
-    gyro->gyroADCRaw[X] = (int16_t)((data[0] << 8) | data[1]);
-    gyro->gyroADCRaw[Y] = (int16_t)((data[2] << 8) | data[3]);
-    gyro->gyroADCRaw[Z] = (int16_t)((data[4] << 8) | data[5]);
-
-    return true;
-}
-
-bool mpuGyroReadSPI(gyroDev_t *gyro)
-{
-    static const uint8_t dataToSend[7] = {MPU_RA_GYRO_XOUT_H | 0x80, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    uint8_t data[7];
-
-    const bool ack = spiBusTransfer(&gyro->bus, dataToSend, data, 7);
-    if (!ack) {
-        return false;
-    }
-
-    gyro->gyroADCRaw[X] = (int16_t)((data[1] << 8) | data[2]);
-    gyro->gyroADCRaw[Y] = (int16_t)((data[3] << 8) | data[4]);
-    gyro->gyroADCRaw[Z] = (int16_t)((data[5] << 8) | data[6]);
 
     return true;
 }
