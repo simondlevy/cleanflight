@@ -2,7 +2,6 @@
 
 #include "drivers/bus.h"
 #include "drivers/exti.h"
-#include "drivers/sensor.h"
 
 #define MPU_RA_WHO_AM_I         0x75
 #define MPU_RA_CONFIG           0x1A
@@ -80,13 +79,14 @@ typedef struct mpuDetectionResult_s {
 } mpuDetectionResult_t;
 
 struct gyroDev_s;
-void mpuGyroInit(struct gyroDev_s *gyro);
-bool mpuGyroRead(struct gyroDev_s *gyro);
-bool mpuGyroReadSPI(struct gyroDev_s *gyro);
-void mpuDetect(struct gyroDev_s *gyro);
+struct accDev_s;
+
+void    mpuGyroInit(struct gyroDev_s *gyro);
+bool    mpuGyroRead(struct gyroDev_s *gyro);
+bool    mpuGyroReadSPI(struct gyroDev_s *gyro);
+void    mpuDetect(struct gyroDev_s *gyro);
 uint8_t mpuGyroDLPF(struct gyroDev_s *gyro);
 uint8_t mpuGyroFCHOICE(struct gyroDev_s *gyro);
 uint8_t mpuGyroReadRegister(const busDevice_t *bus, uint8_t reg);
-
-struct accDev_s;
 bool mpuAccRead(struct accDev_s *acc);
+

@@ -20,6 +20,11 @@
 
 #pragma once
 
+#include "drivers/bus.h"
+#include "drivers/exti.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_mpu.h"
+
 #define MPUx0x0_WHO_AM_I_CONST              (0x68) // MPU3050, 6000 and 6050
 #define MPU6000_WHO_AM_I_CONST              (0x68)
 
@@ -117,11 +122,6 @@
 // RF = Register Flag
 #define MPU_RF_DATA_RDY_EN (1 << 0)
 
-
-#include "drivers/bus.h"
-#include "drivers/exti.h"
-#include "drivers/accgyro/accgyro.h"
-#include "drivers/accgyro/accgyro_mpu.h"
 
 #define MPU6000_CONFIG              0x1A
 

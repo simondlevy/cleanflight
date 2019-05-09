@@ -53,12 +53,6 @@
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 
-static void mpu6000AccAndGyroInit(gyroDev_t *gyro);
-
-static bool mpuSpi6000InitDone = false;
-
-mpuResetFnPtr mpuResetFn;
-
 #define MPU_ADDRESS        0x68
 #define MPU_INQUIRY_MASK   0x7E
 
@@ -110,6 +104,103 @@ mpuResetFnPtr mpuResetFn;
 #define MPU6000_REV_D8 0x58
 #define MPU6000_REV_D9 0x59
 #define MPU6000_REV_D10 0x5A
+
+static bool mpuSpi6000InitDone = false;
+
+mpuResetFnPtr mpuResetFn;
+
+// Private ======================================================================================
+
+static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
+{
+    if (mpuSpi6000InitDone) {
+        return;
+    }
+
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATON);
+
+    // Device Reset
+    spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, BIT_H_RESET);
+    delay(150);
+
+    spiBusWriteRegister(&gyro->bus, MPU_RA_SIGNAL_PATH_RESET, BIT_GYRO | BIT_ACC | BIT_TEMP);
+    delay(150);
+
+    // Clock Source PPL with Z axis gyro reference
+    spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, MPU_CLK_SEL_PLLGYROZ);
+    delayMicroseconds(15);
+
+    // Disable Primary I2C Interface
+    spiBusWriteRegister(&gyro->bus, MPU_RA_USER_CTRL, BIT_I2C_IF_DIS);
+    delayMicroseconds(15);
+
+    spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_2, 0x00);
+    delayMicroseconds(15);
+
+    // Accel Sample Rate 1kHz
+    // Gyroscope Output Rate =  1kHz when the DLPF is enabled
+    spiBusWriteRegister(&gyro->bus, MPU_RA_SMPLRT_DIV, gyro->mpuDividerDrops);
+    delayMicroseconds(15);
+
+    // Gyro +/- 1000 DPS Full Scale
+    spiBusWriteRegister(&gyro->bus, MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
+    delayMicroseconds(15);
+
+    // Accel +/- 16 G Full Scale
+    spiBusWriteRegister(&gyro->bus, MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
+    delayMicroseconds(15);
+
+    spiBusWriteRegister(&gyro->bus, MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 0 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR
+    delayMicroseconds(15);
+
+    spiBusWriteRegister(&gyro->bus, MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);
+    delayMicroseconds(15);
+
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_FAST);
+    delayMicroseconds(1);
+
+    mpuSpi6000InitDone = true;
+}
+
+// Gyro interrupt service routine
+static void mpuIntExtiHandler(extiCallbackRec_t *cb)
+{
+    gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
+    gyro->dataReady = true;
+}
+
+static void mpuIntExtiInit(gyroDev_t *gyro)
+{
+    if (gyro->mpuIntExtiTag == IO_TAG_NONE) {
+        return;
+    }
+
+    const IO_t mpuIntIO = IOGetByTag(gyro->mpuIntExtiTag);
+
+    IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
+    IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
+
+    EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
+    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
+    EXTIEnable(mpuIntIO, true);
+}
+
+static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
+{
+    UNUSED(gyro); // since there are FCs which have gyro on I2C but other devices on SPI
+
+    uint8_t sensor = MPU_NONE;
+    UNUSED(sensor);
+
+    spiBusSetInstance(&gyro->bus, MPU6000_SPI_INSTANCE);
+    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6000_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
+    sensor = mpu6000SpiDetect(&gyro->bus);
+    gyro->mpuDetectionResult.sensor = sensor;
+    return true;
+}
+
+
+// Public  ======================================================================================
 
 void mpu6000SpiGyroInit(gyroDev_t *gyro)
 {
@@ -184,65 +275,8 @@ uint8_t mpu6000SpiDetect(const busDevice_t *bus)
     return MPU_NONE;
 }
 
-static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
-{
-    if (mpuSpi6000InitDone) {
-        return;
-    }
-
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATON);
-
-    // Device Reset
-    spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, BIT_H_RESET);
-    delay(150);
-
-    spiBusWriteRegister(&gyro->bus, MPU_RA_SIGNAL_PATH_RESET, BIT_GYRO | BIT_ACC | BIT_TEMP);
-    delay(150);
-
-    // Clock Source PPL with Z axis gyro reference
-    spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, MPU_CLK_SEL_PLLGYROZ);
-    delayMicroseconds(15);
-
-    // Disable Primary I2C Interface
-    spiBusWriteRegister(&gyro->bus, MPU_RA_USER_CTRL, BIT_I2C_IF_DIS);
-    delayMicroseconds(15);
-
-    spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_2, 0x00);
-    delayMicroseconds(15);
-
-    // Accel Sample Rate 1kHz
-    // Gyroscope Output Rate =  1kHz when the DLPF is enabled
-    spiBusWriteRegister(&gyro->bus, MPU_RA_SMPLRT_DIV, gyro->mpuDividerDrops);
-    delayMicroseconds(15);
-
-    // Gyro +/- 1000 DPS Full Scale
-    spiBusWriteRegister(&gyro->bus, MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
-    delayMicroseconds(15);
-
-    // Accel +/- 16 G Full Scale
-    spiBusWriteRegister(&gyro->bus, MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
-    delayMicroseconds(15);
-
-    spiBusWriteRegister(&gyro->bus, MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 0 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR
-    delayMicroseconds(15);
-
-#ifdef USE_MPU_DATA_READY_SIGNAL
-    spiBusWriteRegister(&gyro->bus, MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);
-    delayMicroseconds(15);
-#endif
-
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_FAST);
-    delayMicroseconds(1);
-
-    mpuSpi6000InitDone = true;
-}
-
 bool mpu6000SpiAccDetect(accDev_t *acc)
 {
-    if (acc->mpuDetectionResult.sensor != MPU_60x0_SPI) {
-        return false;
-    }
-
     acc->initFn = mpu6000SpiAccInit;
     acc->readFn = mpuAccRead;
 
@@ -251,43 +285,12 @@ bool mpu6000SpiAccDetect(accDev_t *acc)
 
 bool mpu6000SpiGyroDetect(gyroDev_t *gyro)
 {
-    if (gyro->mpuDetectionResult.sensor != MPU_60x0_SPI) {
-        return false;
-    }
-
     gyro->initFn = mpu6000SpiGyroInit;
     gyro->readFn = mpuGyroReadSPI;
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
 
     return true;
-}
-
-
-
-/*
- * Gyro interrupt service routine
- */
-static void mpuIntExtiHandler(extiCallbackRec_t *cb)
-{
-    gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
-    gyro->dataReady = true;
-}
-
-static void mpuIntExtiInit(gyroDev_t *gyro)
-{
-    if (gyro->mpuIntExtiTag == IO_TAG_NONE) {
-        return;
-    }
-
-    const IO_t mpuIntIO = IOGetByTag(gyro->mpuIntExtiTag);
-
-    IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
-    IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
-
-    EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
-    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
-    EXTIEnable(mpuIntIO, true);
 }
 
 bool mpuAccRead(accDev_t *acc)
@@ -336,20 +339,6 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
     gyro->gyroADCRaw[Y] = (int16_t)((data[3] << 8) | data[4]);
     gyro->gyroADCRaw[Z] = (int16_t)((data[5] << 8) | data[6]);
 
-    return true;
-}
-
-static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
-{
-    UNUSED(gyro); // since there are FCs which have gyro on I2C but other devices on SPI
-
-    uint8_t sensor = MPU_NONE;
-    UNUSED(sensor);
-
-    spiBusSetInstance(&gyro->bus, MPU6000_SPI_INSTANCE);
-    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6000_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
-    sensor = mpu6000SpiDetect(&gyro->bus);
-    gyro->mpuDetectionResult.sensor = sensor;
     return true;
 }
 
@@ -415,7 +404,6 @@ uint8_t mpuGyroReadRegister(const busDevice_t *bus, uint8_t reg)
     }
 
 }
-
 
 bool gyroSyncCheckUpdate(gyroDev_t *gyro)
 {
