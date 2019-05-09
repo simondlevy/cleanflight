@@ -38,25 +38,8 @@
 #include "pg/pg_ids.h"
 
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/accgyro/accgyro_fake.h"
 #include "drivers/accgyro/accgyro_mpu.h"
-#include "drivers/accgyro/accgyro_mpu3050.h"
-#include "drivers/accgyro/accgyro_mpu6050.h"
-#include "drivers/accgyro/accgyro_mpu6500.h"
-#include "drivers/accgyro/accgyro_spi_bmi160.h"
-#include "drivers/accgyro/accgyro_spi_icm20649.h"
-#include "drivers/accgyro/accgyro_spi_icm20689.h"
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
-#include "drivers/accgyro/accgyro_spi_mpu6500.h"
-#include "drivers/accgyro/accgyro_spi_mpu9250.h"
-
-#ifdef USE_GYRO_L3G4200D
-#include "drivers/accgyro_legacy/accgyro_l3g4200d.h"
-#endif
-
-#ifdef USE_GYRO_L3GD20
-#include "drivers/accgyro_legacy/accgyro_l3gd20.h"
-#endif
 
 #include "drivers/accgyro/gyro_sync.h"
 #include "drivers/bus_spi.h"
@@ -77,10 +60,6 @@
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
-#endif
-
-#if ((FLASH_SIZE > 128) && (defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6500)))
-#define USE_GYRO_SLEW_LIMITER
 #endif
 
 FAST_RAM_ZERO_INIT gyro_t gyro;
@@ -143,9 +122,6 @@ typedef struct gyroSensor_s {
 } gyroSensor_t;
 
 STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT gyroSensor_t gyroSensor1;
-#ifdef USE_DUAL_GYRO
-STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT gyroSensor_t gyroSensor2;
-#endif
 
 #ifdef UNIT_TEST
 STATIC_UNIT_TESTED gyroSensor_t * const gyroSensorPtr = &gyroSensor1;
@@ -157,14 +133,7 @@ static void gyroInitLowpassFilterLpf(gyroSensor_t *gyroSensor, int slot, int typ
 
 #define DEBUG_GYRO_CALIBRATION 3
 
-#ifdef STM32F10X
-#define GYRO_SYNC_DENOM_DEFAULT 8
-#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20649) \
-   || defined(USE_GYRO_SPI_ICM20689)
 #define GYRO_SYNC_DENOM_DEFAULT 1
-#else
-#define GYRO_SYNC_DENOM_DEFAULT 4
-#endif
 
 #define GYRO_OVERFLOW_TRIGGER_THRESHOLD 31980  // 97.5% full scale (1950dps for 2000dps gyro)
 #define GYRO_OVERFLOW_RESET_THRESHOLD 30340    // 92.5% full scale (1850dps for 2000dps gyro)
@@ -202,57 +171,25 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
 
 const busDevice_t *gyroSensorBus(void)
 {
-#ifdef USE_DUAL_GYRO
-    if (gyroToUse == GYRO_CONFIG_USE_GYRO_2) {
-        return &gyroSensor2.gyroDev.bus;
-    } else {
-        return &gyroSensor1.gyroDev.bus;
-    }
-#else
     return &gyroSensor1.gyroDev.bus;
-#endif
 }
 
 #ifdef USE_GYRO_REGISTER_DUMP
 const busDevice_t *gyroSensorBusByDevice(uint8_t whichSensor)
 {
-#ifdef USE_DUAL_GYRO
-    if (whichSensor == GYRO_CONFIG_USE_GYRO_2) {
-        return &gyroSensor2.gyroDev.bus;
-    } else {
-        return &gyroSensor1.gyroDev.bus;
-    }
-#else
     UNUSED(whichSensor);
     return &gyroSensor1.gyroDev.bus;
-#endif
 }
 #endif // USE_GYRO_REGISTER_DUMP
 
 const mpuConfiguration_t *gyroMpuConfiguration(void)
 {
-#ifdef USE_DUAL_GYRO
-    if (gyroToUse == GYRO_CONFIG_USE_GYRO_2) {
-        return &gyroSensor2.gyroDev.mpuConfiguration;
-    } else {
-        return &gyroSensor1.gyroDev.mpuConfiguration;
-    }
-#else
     return &gyroSensor1.gyroDev.mpuConfiguration;
-#endif
 }
 
 const mpuDetectionResult_t *gyroMpuDetectionResult(void)
 {
-#ifdef USE_DUAL_GYRO
-    if (gyroToUse == GYRO_CONFIG_USE_GYRO_2) {
-        return &gyroSensor2.gyroDev.mpuDetectionResult;
-    } else {
-        return &gyroSensor1.gyroDev.mpuDetectionResult;
-    }
-#else
     return &gyroSensor1.gyroDev.mpuDetectionResult;
-#endif
 }
 
 STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
@@ -263,55 +200,6 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
     case GYRO_DEFAULT:
         FALLTHROUGH;
 
-#ifdef USE_GYRO_MPU6050
-    case GYRO_MPU6050:
-        if (mpu6050GyroDetect(dev)) {
-            gyroHardware = GYRO_MPU6050;
-#ifdef GYRO_MPU6050_ALIGN
-            dev->gyroAlign = GYRO_MPU6050_ALIGN;
-#endif
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_GYRO_L3G4200D
-    case GYRO_L3G4200D:
-        if (l3g4200dDetect(dev)) {
-            gyroHardware = GYRO_L3G4200D;
-#ifdef GYRO_L3G4200D_ALIGN
-            dev->gyroAlign = GYRO_L3G4200D_ALIGN;
-#endif
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_GYRO_MPU3050
-    case GYRO_MPU3050:
-        if (mpu3050Detect(dev)) {
-            gyroHardware = GYRO_MPU3050;
-#ifdef GYRO_MPU3050_ALIGN
-            dev->gyroAlign = GYRO_MPU3050_ALIGN;
-#endif
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_GYRO_L3GD20
-    case GYRO_L3GD20:
-        if (l3gd20Detect(dev)) {
-            gyroHardware = GYRO_L3GD20;
-#ifdef GYRO_L3GD20_ALIGN
-            dev->gyroAlign = GYRO_L3GD20_ALIGN;
-#endif
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_GYRO_SPI_MPU6000
     case GYRO_MPU6000:
         if (mpu6000SpiGyroDetect(dev)) {
             gyroHardware = GYRO_MPU6000;
@@ -321,98 +209,6 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
             break;
         }
         FALLTHROUGH;
-#endif
-
-#if defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500)
-    case GYRO_MPU6500:
-    case GYRO_ICM20601:
-    case GYRO_ICM20602:
-    case GYRO_ICM20608G:
-#ifdef USE_GYRO_SPI_MPU6500
-        if (mpu6500GyroDetect(dev) || mpu6500SpiGyroDetect(dev)) {
-#else
-        if (mpu6500GyroDetect(dev)) {
-#endif
-            switch (dev->mpuDetectionResult.sensor) {
-            case MPU_9250_SPI:
-                gyroHardware = GYRO_MPU9250;
-                break;
-            case ICM_20601_SPI:
-                gyroHardware = GYRO_ICM20601;
-                break;
-            case ICM_20602_SPI:
-                gyroHardware = GYRO_ICM20602;
-                break;
-            case ICM_20608_SPI:
-                gyroHardware = GYRO_ICM20608G;
-                break;
-            default:
-                gyroHardware = GYRO_MPU6500;
-            }
-#ifdef GYRO_MPU6500_ALIGN
-            dev->gyroAlign = GYRO_MPU6500_ALIGN;
-#endif
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_GYRO_SPI_MPU9250
-    case GYRO_MPU9250:
-        if (mpu9250SpiGyroDetect(dev)) {
-            gyroHardware = GYRO_MPU9250;
-#ifdef GYRO_MPU9250_ALIGN
-            dev->gyroAlign = GYRO_MPU9250_ALIGN;
-#endif
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_GYRO_SPI_ICM20649
-    case GYRO_ICM20649:
-        if (icm20649SpiGyroDetect(dev)) {
-            gyroHardware = GYRO_ICM20649;
-#ifdef GYRO_ICM20649_ALIGN
-            dev->gyroAlign = GYRO_ICM20649_ALIGN;
-#endif
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_GYRO_SPI_ICM20689
-    case GYRO_ICM20689:
-        if (icm20689SpiGyroDetect(dev)) {
-            gyroHardware = GYRO_ICM20689;
-#ifdef GYRO_ICM20689_ALIGN
-            dev->gyroAlign = GYRO_ICM20689_ALIGN;
-#endif
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_ACCGYRO_BMI160
-    case GYRO_BMI160:
-        if (bmi160SpiGyroDetect(dev)) {
-            gyroHardware = GYRO_BMI160;
-#ifdef GYRO_BMI160_ALIGN
-            dev->gyroAlign = GYRO_BMI160_ALIGN;
-#endif
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_FAKE_GYRO
-    case GYRO_FAKE:
-        if (fakeGyroDetect(dev)) {
-            gyroHardware = GYRO_FAKE;
-            break;
-        }
-        FALLTHROUGH;
-#endif
 
     default:
         gyroHardware = GYRO_NONE;
@@ -431,12 +227,8 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor)
 {
     gyroSensor->gyroDev.gyro_high_fsr = gyroConfig()->gyro_high_fsr;
 
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) \
- || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20649) || defined(USE_GYRO_SPI_ICM20689)
-
     mpuDetect(&gyroSensor->gyroDev);
     mpuResetFn = gyroSensor->gyroDev.mpuConfiguration.resetFn; // must be set after mpuDetect
-#endif
 
     const gyroSensor_e gyroHardware = gyroDetect(&gyroSensor->gyroDev);
     gyroSensor->gyroDev.gyroHardware = gyroHardware;
@@ -444,20 +236,8 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor)
         return false;
     }
 
-    switch (gyroHardware) {
-    case GYRO_MPU6500:
-    case GYRO_MPU9250:
-    case GYRO_ICM20601:
-    case GYRO_ICM20602:
-    case GYRO_ICM20608G:
-    case GYRO_ICM20689:
-        // do nothing, as gyro supports 32kHz
-        break;
-    default:
-        // gyro does not support 32kHz
-        gyroConfigMutable()->gyro_use_32khz = false;
-        break;
-    }
+    // gyro does not support 32kHz
+    gyroConfigMutable()->gyro_use_32khz = false;
 
     // Must set gyro targetLooptime before gyroDev.init and initialisation of filters
     gyro.targetLooptime = gyroSetSampleRate(&gyroSensor->gyroDev, gyroConfig()->gyro_hardware_lpf, gyroConfig()->gyro_sync_denom, gyroConfig()->gyro_use_32khz);

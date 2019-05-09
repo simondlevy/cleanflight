@@ -37,33 +37,8 @@
 #include "pg/pg_ids.h"
 
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/accgyro/accgyro_fake.h"
 #include "drivers/accgyro/accgyro_mpu.h"
-#include "drivers/accgyro/accgyro_mpu3050.h"
-#include "drivers/accgyro/accgyro_mpu6050.h"
-#include "drivers/accgyro/accgyro_mpu6500.h"
-#include "drivers/accgyro/accgyro_spi_bmi160.h"
-#include "drivers/accgyro/accgyro_spi_icm20649.h"
-#include "drivers/accgyro/accgyro_spi_icm20689.h"
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
-#include "drivers/accgyro/accgyro_spi_mpu6500.h"
-#include "drivers/accgyro/accgyro_spi_mpu9250.h"
-
-#ifdef USE_ACC_ADXL345
-#include "drivers/accgyro_legacy/accgyro_adxl345.h"
-#endif
-
-#ifdef USE_ACC_BMA280
-#include "drivers/accgyro_legacy/accgyro_bma280.h"
-#endif
-
-#ifdef USE_ACC_LSM303DLHC
-#include "drivers/accgyro_legacy/accgyro_lsm303dlhc.h"
-#endif
-
-#ifdef USE_ACC_MMA8452
-#include "drivers/accgyro_legacy/accgyro_mma845x.h"
-#endif
 
 #include "drivers/bus_spi.h"
 
@@ -142,77 +117,11 @@ bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 {
     accelerationSensor_e accHardware = ACC_NONE;
 
-#ifdef USE_ACC_ADXL345
-    drv_adxl345_config_t acc_params;
-#endif
-
 retry:
 
     switch (accHardwareToUse) {
     case ACC_DEFAULT:
         FALLTHROUGH;
-
-#ifdef USE_ACC_ADXL345
-    case ACC_ADXL345: // ADXL345
-        acc_params.useFifo = false;
-        acc_params.dataRate = 800; // unused currently
-        if (adxl345Detect(&acc_params, dev)) {
-#ifdef ACC_ADXL345_ALIGN
-            dev->accAlign = ACC_ADXL345_ALIGN;
-#endif
-            accHardware = ACC_ADXL345;
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_ACC_LSM303DLHC
-    case ACC_LSM303DLHC:
-        if (lsm303dlhcAccDetect(dev)) {
-#ifdef ACC_LSM303DLHC_ALIGN
-            dev->accAlign = ACC_LSM303DLHC_ALIGN;
-#endif
-            accHardware = ACC_LSM303DLHC;
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_ACC_MPU6050
-    case ACC_MPU6050: // MPU6050
-        if (mpu6050AccDetect(dev)) {
-#ifdef ACC_MPU6050_ALIGN
-            dev->accAlign = ACC_MPU6050_ALIGN;
-#endif
-            accHardware = ACC_MPU6050;
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_ACC_MMA8452
-    case ACC_MMA8452: // MMA8452
-        if (mma8452Detect(dev)) {
-#ifdef ACC_MMA8452_ALIGN
-            dev->accAlign = ACC_MMA8452_ALIGN;
-#endif
-            accHardware = ACC_MMA8452;
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_ACC_BMA280
-    case ACC_BMA280: // BMA280
-        if (bma280Detect(dev)) {
-#ifdef ACC_BMA280_ALIGN
-            dev->accAlign = ACC_BMA280_ALIGN;
-#endif
-            accHardware = ACC_BMA280;
-            break;
-        }
-        FALLTHROUGH;
-#endif
 
 #ifdef USE_ACC_SPI_MPU6000
     case ACC_MPU6000:
@@ -221,97 +130,6 @@ retry:
             dev->accAlign = ACC_MPU6000_ALIGN;
 #endif
             accHardware = ACC_MPU6000;
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_ACC_SPI_MPU9250
-    case ACC_MPU9250:
-        if (mpu9250SpiAccDetect(dev)) {
-#ifdef ACC_MPU9250_ALIGN
-            dev->accAlign = ACC_MPU9250_ALIGN;
-#endif
-            accHardware = ACC_MPU9250;
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-    case ACC_MPU6500:
-    case ACC_ICM20601:
-    case ACC_ICM20602:
-    case ACC_ICM20608G:
-#if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
-#ifdef USE_ACC_SPI_MPU6500
-        if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev)) {
-#else
-        if (mpu6500AccDetect(dev)) {
-#endif
-#ifdef ACC_MPU6500_ALIGN
-            dev->accAlign = ACC_MPU6500_ALIGN;
-#endif
-            switch (dev->mpuDetectionResult.sensor) {
-            case MPU_9250_SPI:
-                accHardware = ACC_MPU9250;
-                break;
-            case ICM_20601_SPI:
-                accHardware = ACC_ICM20601;
-                break;
-            case ICM_20602_SPI:
-                accHardware = ACC_ICM20602;
-                break;
-            case ICM_20608_SPI:
-                accHardware = ACC_ICM20608G;
-                break;
-            default:
-                accHardware = ACC_MPU6500;
-            }
-            break;
-        }
-#endif
-        FALLTHROUGH;
-
-#ifdef USE_ACC_SPI_ICM20649
-    case ACC_ICM20649:
-        if (icm20649SpiAccDetect(dev)) {
-            accHardware = ACC_ICM20649;
-#ifdef ACC_ICM20649_ALIGN
-            dev->accAlign = ACC_ICM20649_ALIGN;
-#endif
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_ACC_SPI_ICM20689
-    case ACC_ICM20689:
-        if (icm20689SpiAccDetect(dev)) {
-            accHardware = ACC_ICM20689;
-#ifdef ACC_ICM20689_ALIGN
-            dev->accAlign = ACC_ICM20689_ALIGN;
-#endif
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_ACCGYRO_BMI160
-    case ACC_BMI160:
-        if (bmi160SpiAccDetect(dev)) {
-            accHardware = ACC_BMI160;
-#ifdef ACC_BMI160_ALIGN
-            dev->accAlign = ACC_BMI160_ALIGN;
-#endif
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_FAKE_ACC
-    case ACC_FAKE:
-        if (fakeAccDetect(dev)) {
-            accHardware = ACC_FAKE;
             break;
         }
         FALLTHROUGH;
@@ -347,15 +165,7 @@ bool accInit(uint32_t gyroSamplingInverval)
     acc.dev.mpuDetectionResult = *gyroMpuDetectionResult();
     acc.dev.acc_high_fsr = accelerometerConfig()->acc_high_fsr;
 
-#ifdef USE_DUAL_GYRO
-    if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_2) {
-        acc.dev.accAlign = ACC_2_ALIGN;
-    } else {
-        acc.dev.accAlign = ACC_1_ALIGN;
-    }
-#else
     acc.dev.accAlign = ALIGN_DEFAULT;
-#endif
 
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
         return false;
@@ -372,11 +182,7 @@ bool accInit(uint32_t gyroSamplingInverval)
         break;
     case 1000:
     default:
-#ifdef STM32F10X
         acc.accSamplingInterval = 1000;
-#else
-        acc.accSamplingInterval = 1000;
-#endif
     }
     if (accLpfCutHz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {

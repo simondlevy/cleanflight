@@ -203,12 +203,6 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
         FALLTHROUGH;
 
     case BARO_MS5611:
-#if defined(USE_BARO_MS5611) || defined(USE_BARO_SPI_MS5611)
-        if (ms5611Detect(dev)) {
-            baroHardware = BARO_MS5611;
-            break;
-        }
-#endif
         FALLTHROUGH;
 
     case BARO_LPS:
