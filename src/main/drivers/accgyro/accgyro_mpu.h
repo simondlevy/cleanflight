@@ -83,5 +83,4 @@ struct accDev_s;
 
 void    mpuGyroInit(struct gyroDev_s *gyro);
 void    mpuDetect(struct gyroDev_s *gyro);
-uint8_t mpuGyroReadRegister(const busDevice_t *bus, uint8_t reg);
 

@@ -379,18 +379,6 @@ void mpuGyroInit(gyroDev_t *gyro)
     mpuIntExtiInit(gyro);
 }
 
-uint8_t mpuGyroReadRegister(const busDevice_t *bus, uint8_t reg)
-{
-    uint8_t data;
-    const bool ack = busReadRegisterBuffer(bus, reg, &data, 1);
-    if (ack) {
-        return data;
-    } else {
-        return 0;
-    }
-
-}
-
 uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenominator, bool gyro_use_32khz)
 {
     float gyroSamplePeriod;

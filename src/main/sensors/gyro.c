@@ -1011,10 +1011,3 @@ uint16_t gyroAbsRateDps(int axis)
 {
     return fabsf(gyro.gyroADCf[axis]);
 }
-
-#ifdef USE_GYRO_REGISTER_DUMP
-uint8_t gyroReadRegister(uint8_t whichSensor, uint8_t reg)
-{
-    return mpuGyroReadRegister(gyroSensorBusByDevice(whichSensor), reg);
-}
-#endif // USE_GYRO_REGISTER_DUMP
