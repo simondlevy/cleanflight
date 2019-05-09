@@ -55,8 +55,10 @@ void mydebug(void)
 {
     extern void tfp_sprintf(char* s,char *fmt, ...);
 
+    extern busType_e accBusType, gyroBusType;
+
     char buf[100];
-    tfp_sprintf(buf, "foo: %d  bar: %d\n", 88, 99);
+    tfp_sprintf(buf, "a: %d  g: %d\n", accBusType, gyroBusType);
 
     myputs(buf);
 

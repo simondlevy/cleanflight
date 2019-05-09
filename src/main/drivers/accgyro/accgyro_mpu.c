@@ -54,6 +54,11 @@
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 
+// =========================================================================
+
+busType_e accBusType = 0;
+busType_e gyroBusType = 0;
+
 mpuResetFnPtr mpuResetFn;
 
 #ifndef MPU_I2C_INSTANCE
@@ -154,6 +159,8 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
 
 bool mpuAccRead(accDev_t *acc)
 {
+    accBusType = acc->bus.bustype;
+
     uint8_t data[6];
 
     const bool ack = busReadRegisterBuffer(&acc->bus, MPU_RA_ACCEL_XOUT_H, data, 6);
@@ -170,6 +177,8 @@ bool mpuAccRead(accDev_t *acc)
 
 bool mpuGyroRead(gyroDev_t *gyro)
 {
+    gyroBusType = gyro->bus.bustype;
+
     uint8_t data[6];
 
     const bool ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_GYRO_XOUT_H, data, 6);
