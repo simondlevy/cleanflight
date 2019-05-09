@@ -294,6 +294,30 @@ static bool mpuAccRead(accDev_t *acc)
     return true;
 }
 
+static uint8_t mpuGyroDLPF(gyroDev_t *gyro)
+{
+    uint8_t ret;
+    if (gyro->gyroRateKHz > GYRO_RATE_8_kHz) {
+        ret = 0;  // If gyro is in 32KHz mode then the DLPF bits aren't used - set to 0
+    } else {
+        switch (gyro->hardware_lpf) {
+            case GYRO_HARDWARE_LPF_NORMAL:
+                ret = 0;
+                break;
+            case GYRO_HARDWARE_LPF_EXPERIMENTAL:
+                ret = 7;
+                break;
+            case GYRO_HARDWARE_LPF_1KHZ_SAMPLE:
+                ret = 1;
+                break;
+            default:
+                ret = 0;
+                break;
+        }
+    }
+    return ret;
+}
+
 
 // Public:  ======================================================================================
 
@@ -353,30 +377,6 @@ void mpuDetect(gyroDev_t *gyro)
 void mpuGyroInit(gyroDev_t *gyro)
 {
     mpuIntExtiInit(gyro);
-}
-
-uint8_t mpuGyroDLPF(gyroDev_t *gyro)
-{
-    uint8_t ret;
-    if (gyro->gyroRateKHz > GYRO_RATE_8_kHz) {
-        ret = 0;  // If gyro is in 32KHz mode then the DLPF bits aren't used - set to 0
-    } else {
-        switch (gyro->hardware_lpf) {
-            case GYRO_HARDWARE_LPF_NORMAL:
-                ret = 0;
-                break;
-            case GYRO_HARDWARE_LPF_EXPERIMENTAL:
-                ret = 7;
-                break;
-            case GYRO_HARDWARE_LPF_1KHZ_SAMPLE:
-                ret = 1;
-                break;
-            default:
-                ret = 0;
-                break;
-        }
-    }
-    return ret;
 }
 
 uint8_t mpuGyroReadRegister(const busDevice_t *bus, uint8_t reg)

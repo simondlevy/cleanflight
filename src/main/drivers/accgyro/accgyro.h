@@ -29,14 +29,6 @@
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "sensors/gyro.h"
 
-#pragma GCC diagnostic push
-
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-#include <pthread.h>
-#elif !defined(UNIT_TEST)
-#pragma GCC diagnostic warning "-Wpadded"
-#endif
-
 #ifndef MPU_I2C_INSTANCE
 #define MPU_I2C_INSTANCE I2C_DEVICE
 #endif
@@ -97,24 +89,3 @@ typedef struct accDev_s {
     char revisionCode;                                      // a revision code for the sensor, if known
     uint8_t filler[2];
 } accDev_t;
-
-static inline void accDevLock(accDev_t *acc)
-{
-    (void)acc;
-}
-
-static inline void accDevUnLock(accDev_t *acc)
-{
-    (void)acc;
-}
-
-static inline void gyroDevLock(gyroDev_t *gyro)
-{
-    (void)gyro;
-}
-
-static inline void gyroDevUnLock(gyroDev_t *gyro)
-{
-    (void)gyro;
-}
-#pragma GCC diagnostic pop
