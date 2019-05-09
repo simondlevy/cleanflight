@@ -43,15 +43,14 @@
 #include "drivers/time.h"
 
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/accgyro/accgyro_mpu3050.h"
-#include "drivers/accgyro/accgyro_mpu6050.h"
+
 #include "drivers/accgyro/accgyro_mpu6500.h"
-#include "drivers/accgyro/accgyro_spi_bmi160.h"
 #include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
+
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
+
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
-#include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 
 // =========================================================================
@@ -61,8 +60,7 @@ uint8_t foo = 0;
 
 mpuResetFnPtr mpuResetFn;
 
-#define MPU_ADDRESS             0x68
-
+#define MPU_ADDRESS        0x68
 #define MPU_INQUIRY_MASK   0x7E
 
 /*
@@ -146,35 +144,11 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     uint8_t sensor = MPU_NONE;
     UNUSED(sensor);
 
-    // note, when USE_DUAL_GYRO is enabled the gyro->bus must already be initialised.
-
     spiBusSetInstance(&gyro->bus, MPU6000_SPI_INSTANCE);
     gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6000_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
     sensor = mpu6000SpiDetect(&gyro->bus);
-    if (sensor != MPU_NONE) {
-        gyro->mpuDetectionResult.sensor = sensor;
-        return true;
-    }
-
-    spiBusSetInstance(&gyro->bus, MPU6500_SPI_INSTANCE);
-    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6500_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
-    sensor = mpu6500SpiDetect(&gyro->bus);
-    // some targets using MPU_9250_SPI, ICM_20608_SPI or ICM_20602_SPI state sensor is MPU_65xx_SPI
-    if (sensor != MPU_NONE) {
-        gyro->mpuDetectionResult.sensor = sensor;
-        return true;
-    }
-
-    spiBusSetInstance(&gyro->bus, ICM20689_SPI_INSTANCE);
-    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(ICM20689_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
-    sensor = icm20689SpiDetect(&gyro->bus);
-    // icm20689SpiDetect detects ICM20602 and ICM20689
-    if (sensor != MPU_NONE) {
-        gyro->mpuDetectionResult.sensor = sensor;
-        return true;
-    }
-
-    return false;
+    gyro->mpuDetectionResult.sensor = sensor;
+    return true;
 }
 
 void mpuDetect(gyroDev_t *gyro)
