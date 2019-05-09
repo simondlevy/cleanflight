@@ -38,28 +38,26 @@
 
 #include "io/serial.h"
 
+#include "drivers/bus.h"
+
 #include <stdarg.h>
 
-static void myprintf(const char *fmt, ...)
+static void myputs(char * buf)
 {
     extern serialPort_t * myDebugPort;
-    extern void tfp_sprintf(char* s,char *fmt, ...);
-
-    va_list ap;
-    va_start(ap, fmt);
-    char buf[200];
-    //tfp_sprintf(buf, 200, fmt, ap); 
-    vsnprintf(buf, 200, fmt, ap); 
 
     for (char *p=buf; *p; p++) { 
         serialWrite(myDebugPort, *p);
     }
-
-    va_end(ap);
 }
 
 void mydebug(void)
 {
-    static int count;
-    myprintf("hello %d\n", count++);
+    extern void tfp_sprintf(char* s,char *fmt, ...);
+
+    char buf[100];
+    tfp_sprintf(buf, "foo: %d  bar: %d\n", 88, 99);
+
+    myputs(buf);
+
 }
