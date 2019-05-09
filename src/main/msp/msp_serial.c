@@ -18,6 +18,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -40,6 +41,25 @@
 #include "msp/msp_serial.h"
 
 #include <stdarg.h>
+
+static void myprintf(const char *fmt, ...)
+{
+    extern serialPort_t * myDebugPort;
+    extern void tfp_sprintf(char* s,char *fmt, ...);
+
+    va_list ap;
+    va_start(ap, fmt);
+    char buf[200];
+    //tfp_sprintf(buf, 200, fmt, ap); 
+    vsnprintf(buf, 200, fmt, ap); 
+
+    for (char *p=buf; *p; p++) { 
+        serialWrite(myDebugPort, *p);
+    }
+
+    va_end(ap);
+}
+
 
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
@@ -489,7 +509,7 @@ static void mspSerialProcessReceivedReply(mspPort_t *msp, mspProcessReplyFnPtr m
  */
 void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessCommandFnPtr mspProcessCommandFn, mspProcessReplyFnPtr mspProcessReplyFn)
 {
-    static uint32_t count;
+    static int count;
     myprintf("hello %d\n", count++);
 
     for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {

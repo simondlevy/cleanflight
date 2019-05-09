@@ -52,24 +52,4 @@ void FAST_CODE FAST_CODE_NOINLINE run(void)
     }
 }
 
-#include <stdarg.h>
-
-void myprintf(const char *fmt, ...)
-{
-    extern serialPort_t * myDebugPort;
-    extern void tfp_sprintf(char* s,char *fmt, ...);
-
-    va_list ap;
-    va_start(ap, fmt);
-    char buf[200];
-    //tfp_sprintf(buf, 200, fmt, ap); 
-    vsnprintf(buf, 200, fmt, ap); 
-
-    for (char *p=buf; *p; p++) { 
-        serialWrite(myDebugPort, *p);
-    }
-
-    va_end(ap);
-}
-
 
