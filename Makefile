@@ -16,7 +16,7 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET    ?= FURYF4OSD
+TARGET    ?= FURYF4
 
 # Compile-time options
 OPTIONS   ?=
