@@ -21,6 +21,8 @@
 #pragma once
 
 #include "drivers/bus.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_mpu.h"
 
 #define MPU6000_CONFIG              0x1A
 
@@ -38,3 +40,5 @@ uint8_t mpu6000SpiDetect(const busDevice_t *bus);
 
 bool mpu6000SpiAccDetect(accDev_t *acc);
 bool mpu6000SpiGyroDetect(gyroDev_t *gyro);
+bool gyroSyncCheckUpdate(gyroDev_t *gyro);
+uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenominator, bool gyro_use_32khz);

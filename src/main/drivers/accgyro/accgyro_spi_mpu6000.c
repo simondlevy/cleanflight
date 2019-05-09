@@ -53,8 +53,6 @@
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 
-#include "drivers/accgyro/gyro_sync.h"
-
 static void mpu6000AccAndGyroInit(gyroDev_t *gyro);
 
 static bool mpuSpi6000InitDone = false;
