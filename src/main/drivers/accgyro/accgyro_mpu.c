@@ -55,46 +55,15 @@
 #include "drivers/accgyro/accgyro_mpu.h"
 
 // =========================================================================
-
-busType_e accBusType = 0;
-busType_e gyroBusType = 0;
+// Debugging
+uint8_t foo = 0;
+// =========================================================================
 
 mpuResetFnPtr mpuResetFn;
 
 #define MPU_ADDRESS             0x68
 
 #define MPU_INQUIRY_MASK   0x7E
-
-static void mpu6050FindRevision(gyroDev_t *gyro)
-{
-    // determine product ID and revision
-    uint8_t readBuffer[6];
-    bool ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_XA_OFFS_H, readBuffer, 6);
-    uint8_t revision = ((readBuffer[5] & 0x01) << 2) | ((readBuffer[3] & 0x01) << 1) | (readBuffer[1] & 0x01);
-    if (ack && revision) {
-        // Congrats, these parts are better
-        if (revision == 1) {
-            gyro->mpuDetectionResult.resolution = MPU_HALF_RESOLUTION;
-        } else if (revision == 2) {
-            gyro->mpuDetectionResult.resolution = MPU_FULL_RESOLUTION;
-        } else if ((revision == 3) || (revision == 7)) {
-            gyro->mpuDetectionResult.resolution = MPU_FULL_RESOLUTION;
-        } else {
-            failureMode(FAILURE_ACC_INCOMPATIBLE);
-        }
-    } else {
-        uint8_t productId;
-        ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_PRODUCT_ID, &productId, 1);
-        revision = productId & 0x0F;
-        if (!ack || revision == 0) {
-            failureMode(FAILURE_ACC_INCOMPATIBLE);
-        } else if (revision == 4) {
-            gyro->mpuDetectionResult.resolution = MPU_HALF_RESOLUTION;
-        } else {
-            gyro->mpuDetectionResult.resolution = MPU_FULL_RESOLUTION;
-        }
-    }
-}
 
 /*
  * Gyro interrupt service routine
@@ -123,8 +92,6 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
 
 bool mpuAccRead(accDev_t *acc)
 {
-    accBusType = acc->bus.bustype;
-
     uint8_t data[6];
 
     const bool ack = busReadRegisterBuffer(&acc->bus, MPU_RA_ACCEL_XOUT_H, data, 6);
@@ -141,8 +108,6 @@ bool mpuAccRead(accDev_t *acc)
 
 bool mpuGyroRead(gyroDev_t *gyro)
 {
-    gyroBusType = gyro->bus.bustype;
-
     uint8_t data[6];
 
     const bool ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_GYRO_XOUT_H, data, 6);
@@ -240,12 +205,6 @@ void mpuDetect(gyroDev_t *gyro)
             }
 
             sig &= MPU_INQUIRY_MASK;
-            if (sig == MPUx0x0_WHO_AM_I_CONST) {
-                gyro->mpuDetectionResult.sensor = MPU_60x0;
-                mpu6050FindRevision(gyro);
-            } else if (sig == MPU6500_WHO_AM_I_CONST) {
-                gyro->mpuDetectionResult.sensor = MPU_65xx_I2C;
-            }
             return;
         }
     }
