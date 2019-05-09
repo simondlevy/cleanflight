@@ -185,82 +185,6 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
     EXTIEnable(mpuIntIO, true);
 }
 
-static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
-{
-    UNUSED(gyro); // since there are FCs which have gyro on I2C but other devices on SPI
-
-    uint8_t sensor = MPU_NONE;
-    UNUSED(sensor);
-
-    spiBusSetInstance(&gyro->bus, MPU6000_SPI_INSTANCE);
-    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6000_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
-    sensor = mpu6000SpiDetect(&gyro->bus);
-    gyro->mpuDetectionResult.sensor = sensor;
-    return true;
-}
-
-static void mpuGyroRead(gyroDev_t *gyro)
-{
-    uint8_t data[6];
-
-    const bool ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_GYRO_XOUT_H, data, 6);
-    if (!ack) {
-        return false;
-    }
-
-    gyro->gyroADCRaw[X] = (int16_t)((data[0] << 8) | data[1]);
-    gyro->gyroADCRaw[Y] = (int16_t)((data[2] << 8) | data[3]);
-    gyro->gyroADCRaw[Z] = (int16_t)((data[4] << 8) | data[5]);
-
-    return true;
-}
-
-bool mpuGyroReadSPI(gyroDev_t *gyro)
-{
-    static const uint8_t dataToSend[7] = {MPU_RA_GYRO_XOUT_H | 0x80, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    uint8_t data[7];
-
-    const bool ack = spiBusTransfer(&gyro->bus, dataToSend, data, 7);
-    if (!ack) {
-        return false;
-    }
-
-    gyro->gyroADCRaw[X] = (int16_t)((data[1] << 8) | data[2]);
-    gyro->gyroADCRaw[Y] = (int16_t)((data[3] << 8) | data[4]);
-    gyro->gyroADCRaw[Z] = (int16_t)((data[5] << 8) | data[6]);
-
-    return true;
-}
-
-
-// Public:  ======================================================================================
-
-void mpu6000SpiGyroInit(gyroDev_t *gyro)
-{
-    mpuGyroInit(gyro);
-
-    mpu6000AccAndGyroInit(gyro);
-
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATON);
-
-    // Accel and Gyro DLPF Setting
-    spiBusWriteRegister(&gyro->bus, MPU6000_CONFIG, mpuGyroDLPF(gyro));
-    delayMicroseconds(1);
-
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_FAST);  // 18 MHz SPI clock
-
-    mpuGyroRead(gyro);
-
-    if (((int8_t)gyro->gyroADCRaw[1]) == -1 && ((int8_t)gyro->gyroADCRaw[0]) == -1) {
-        failureMode(FAILURE_GYRO_INIT_FAILED);
-    }
-}
-
-void mpu6000SpiAccInit(accDev_t *acc)
-{
-    acc->acc_1G = 512 * 4;
-}
-
 uint8_t mpu6000SpiDetect(const busDevice_t *bus)
 {
     IOInit(bus->busdev_u.spi.csnPin, OWNER_MPU_CS, 0);
@@ -308,6 +232,97 @@ uint8_t mpu6000SpiDetect(const busDevice_t *bus)
     return MPU_NONE;
 }
 
+
+static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
+{
+    UNUSED(gyro); // since there are FCs which have gyro on I2C but other devices on SPI
+
+    uint8_t sensor = MPU_NONE;
+    UNUSED(sensor);
+
+    spiBusSetInstance(&gyro->bus, MPU6000_SPI_INSTANCE);
+    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6000_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
+    sensor = mpu6000SpiDetect(&gyro->bus);
+    gyro->mpuDetectionResult.sensor = sensor;
+    return true;
+}
+
+static void mpuGyroRead(gyroDev_t *gyro)
+{
+    uint8_t data[6];
+
+    const bool ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_GYRO_XOUT_H, data, 6);
+    if (!ack) {
+        return;
+    }
+
+    gyro->gyroADCRaw[X] = (int16_t)((data[0] << 8) | data[1]);
+    gyro->gyroADCRaw[Y] = (int16_t)((data[2] << 8) | data[3]);
+    gyro->gyroADCRaw[Z] = (int16_t)((data[4] << 8) | data[5]);
+}
+
+bool mpuGyroReadSPI(gyroDev_t *gyro)
+{
+    static const uint8_t dataToSend[7] = {MPU_RA_GYRO_XOUT_H | 0x80, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    uint8_t data[7];
+
+    const bool ack = spiBusTransfer(&gyro->bus, dataToSend, data, 7);
+    if (!ack) {
+        return false;
+    }
+
+    gyro->gyroADCRaw[X] = (int16_t)((data[1] << 8) | data[2]);
+    gyro->gyroADCRaw[Y] = (int16_t)((data[3] << 8) | data[4]);
+    gyro->gyroADCRaw[Z] = (int16_t)((data[5] << 8) | data[6]);
+
+    return true;
+}
+
+static bool mpuAccRead(accDev_t *acc)
+{
+    uint8_t data[6];
+
+    const bool ack = busReadRegisterBuffer(&acc->bus, MPU_RA_ACCEL_XOUT_H, data, 6);
+    if (!ack) {
+        return false;
+    }
+
+    acc->ADCRaw[X] = (int16_t)((data[0] << 8) | data[1]);
+    acc->ADCRaw[Y] = (int16_t)((data[2] << 8) | data[3]);
+    acc->ADCRaw[Z] = (int16_t)((data[4] << 8) | data[5]);
+
+    return true;
+}
+
+
+// Public:  ======================================================================================
+
+void mpu6000SpiGyroInit(gyroDev_t *gyro)
+{
+    mpuGyroInit(gyro);
+
+    mpu6000AccAndGyroInit(gyro);
+
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATON);
+
+    // Accel and Gyro DLPF Setting
+    spiBusWriteRegister(&gyro->bus, MPU6000_CONFIG, mpuGyroDLPF(gyro));
+    delayMicroseconds(1);
+
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_FAST);  // 18 MHz SPI clock
+
+    mpuGyroRead(gyro);
+
+    if (((int8_t)gyro->gyroADCRaw[1]) == -1 && ((int8_t)gyro->gyroADCRaw[0]) == -1) {
+        failureMode(FAILURE_GYRO_INIT_FAILED);
+    }
+}
+
+void mpu6000SpiAccInit(accDev_t *acc)
+{
+    acc->acc_1G = 512 * 4;
+}
+
 bool mpu6000SpiAccDetect(accDev_t *acc)
 {
     acc->initFn = mpu6000SpiAccInit;
@@ -322,22 +337,6 @@ bool mpu6000SpiGyroDetect(gyroDev_t *gyro)
     gyro->readFn = mpuGyroReadSPI;
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
-
-    return true;
-}
-
-bool mpuAccRead(accDev_t *acc)
-{
-    uint8_t data[6];
-
-    const bool ack = busReadRegisterBuffer(&acc->bus, MPU_RA_ACCEL_XOUT_H, data, 6);
-    if (!ack) {
-        return false;
-    }
-
-    acc->ADCRaw[X] = (int16_t)((data[0] << 8) | data[1]);
-    acc->ADCRaw[Y] = (int16_t)((data[2] << 8) | data[3]);
-    acc->ADCRaw[Z] = (int16_t)((data[4] << 8) | data[5]);
 
     return true;
 }
@@ -380,19 +379,6 @@ uint8_t mpuGyroDLPF(gyroDev_t *gyro)
     return ret;
 }
 
-uint8_t mpuGyroFCHOICE(gyroDev_t *gyro)
-{
-    if (gyro->gyroRateKHz > GYRO_RATE_8_kHz) {
-        if (gyro->hardware_32khz_lpf == GYRO_32KHZ_HARDWARE_LPF_EXPERIMENTAL) {
-            return FCB_8800_32;
-        } else {
-            return FCB_3600_32;
-        }
-    } else {
-        return FCB_DISABLED;  // Not in 32KHz mode, set FCHOICE to select 8KHz sampling
-    }
-}
-
 uint8_t mpuGyroReadRegister(const busDevice_t *bus, uint8_t reg)
 {
     uint8_t data;
@@ -403,18 +389,6 @@ uint8_t mpuGyroReadRegister(const busDevice_t *bus, uint8_t reg)
         return 0;
     }
 
-}
-
-bool gyroSyncCheckUpdate(gyroDev_t *gyro)
-{
-    bool ret;
-    if (gyro->dataReady) {
-        ret = true;
-        gyro->dataReady= false;
-    } else {
-        ret = false;
-    }
-    return ret;
 }
 
 uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenominator, bool gyro_use_32khz)
