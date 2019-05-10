@@ -267,6 +267,11 @@ static uint8_t mpuGyroDLPF(gyroDev_t *gyro)
     return ret;
 }
 
+static void mpu6000SpiAccInit(accDev_t *acc)
+{
+    acc->acc_1G = 512 * 4;
+}
+
 // Public:  ======================================================================================
 
 void mpu6000SpiGyroInit(gyroDev_t *gyro)
@@ -336,10 +341,6 @@ void mpu6000SpiGyroInit(gyroDev_t *gyro)
     }
 }
 
-void mpu6000SpiAccInit(accDev_t *acc)
-{
-    acc->acc_1G = 512 * 4;
-}
 
 bool mpu6000SpiAccDetect(accDev_t *acc)
 {
