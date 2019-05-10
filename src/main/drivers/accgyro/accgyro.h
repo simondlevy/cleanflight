@@ -22,7 +22,6 @@
 
 #include "platform.h"
 
-#include "common/axis.h"
 #include "drivers/exti.h"
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
