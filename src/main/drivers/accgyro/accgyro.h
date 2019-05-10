@@ -59,10 +59,7 @@ typedef struct mpuDetectionResult_s {
 } mpuDetectionResult_t;
 #include "sensors/gyro.h"
 
-#ifndef MPU_I2C_INSTANCE
 #define MPU_I2C_INSTANCE I2C_DEVICE
-#endif
-
 #define GYRO_HARDWARE_LPF_NORMAL       0
 #define GYRO_HARDWARE_LPF_EXPERIMENTAL 1
 #define GYRO_HARDWARE_LPF_1KHZ_SAMPLE  2
