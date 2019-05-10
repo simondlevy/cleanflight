@@ -135,6 +135,13 @@
 // RF = Register Flag
 #define MPU_RF_DATA_RDY_EN (1 << 0)
 
+typedef enum {
+    GYRO_OVERFLOW_NONE = 0x00,
+    GYRO_OVERFLOW_X = 0x01,
+    GYRO_OVERFLOW_Y = 0x02,
+    GYRO_OVERFLOW_Z = 0x04
+} gyroOverflow_e;
+
 enum gyro_fsr_e {
     INV_FSR_250DPS = 0,
     INV_FSR_500DPS,
