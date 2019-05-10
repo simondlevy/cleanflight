@@ -53,10 +53,8 @@ static void myputs(char * buf)
 
 void mydebug(void)
 {
-    extern void tfp_sprintf(char* s,char *fmt, ...);
-
-    char buf[100];
+    //extern void tfp_sprintf(char* s,char *fmt, ...);
+    //char buf[100];
     //tfp_sprintf(buf, "%d\n", foo);
     //myputs(buf);
-
 }

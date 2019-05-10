@@ -340,7 +340,6 @@ void mpu6000SpiGyroInit(gyroDev_t *gyro)
     }
 }
 
-
 bool mpu6000SpiAccDetect(accDev_t *acc)
 {
     acc->initFn = mpu6000SpiAccInit;
