@@ -1,8 +1,5 @@
 #pragma once
 
-#include "drivers/bus.h"
-#include "drivers/exti.h"
-
 typedef void (*mpuResetFnPtr)(void);
 
 extern mpuResetFnPtr mpuResetFn;
