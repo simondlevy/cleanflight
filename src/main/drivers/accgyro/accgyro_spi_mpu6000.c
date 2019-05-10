@@ -390,3 +390,12 @@ uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenomin
     const uint32_t targetLooptime = (uint32_t)(gyroSyncDenominator * gyroSamplePeriod);
     return targetLooptime;
 }
+
+void mpu6000_spi_init(gyroDev_t * gyro, accDev_t * acc, uint8_t lpf, uint8_t gyroSyncDenominator, bool gyro_use_32khz)
+{
+    mpuDetect(gyro);
+    mpu6000SpiGyroDetect(gyro);
+    gyroSetSampleRate(gyro, lpf, gyroSyncDenominator, gyro_use_32khz);
+    mpu6000SpiAccDetect(acc);
+
+}
