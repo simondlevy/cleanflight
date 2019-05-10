@@ -57,7 +57,6 @@ void mydebug(void)
 
     char buf[100];
     //tfp_sprintf(buf, "%d\n", foo);
-
     //myputs(buf);
 
 }

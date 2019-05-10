@@ -22,7 +22,7 @@
  * Authors:
  * Dominic Clifton - Cleanflight implementation
  * John Ihlein - Initial FF32 code
-*/
+ */
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -214,19 +214,19 @@ uint8_t mpu6000SpiDetect(const busDevice_t *bus)
 
     // verify product revision
     switch (productID) {
-    case MPU6000ES_REV_C4:
-    case MPU6000ES_REV_C5:
-    case MPU6000_REV_C4:
-    case MPU6000_REV_C5:
-    case MPU6000ES_REV_D6:
-    case MPU6000ES_REV_D7:
-    case MPU6000ES_REV_D8:
-    case MPU6000_REV_D6:
-    case MPU6000_REV_D7:
-    case MPU6000_REV_D8:
-    case MPU6000_REV_D9:
-    case MPU6000_REV_D10:
-        return MPU_60x0_SPI;
+        case MPU6000ES_REV_C4:
+        case MPU6000ES_REV_C5:
+        case MPU6000_REV_C4:
+        case MPU6000_REV_C5:
+        case MPU6000ES_REV_D6:
+        case MPU6000ES_REV_D7:
+        case MPU6000ES_REV_D8:
+        case MPU6000_REV_D6:
+        case MPU6000_REV_D7:
+        case MPU6000_REV_D8:
+        case MPU6000_REV_D9:
+        case MPU6000_REV_D10:
+            return MPU_60x0_SPI;
     }
 
     return MPU_NONE;
@@ -318,6 +318,10 @@ static uint8_t mpuGyroDLPF(gyroDev_t *gyro)
     return ret;
 }
 
+static void mpuGyroInit(gyroDev_t *gyro)
+{
+    mpuIntExtiInit(gyro);
+}
 
 // Public:  ======================================================================================
 
@@ -374,11 +378,6 @@ void mpuDetect(gyroDev_t *gyro)
     detectSPISensorsAndUpdateDetectionResult(gyro);
 }
 
-void mpuGyroInit(gyroDev_t *gyro)
-{
-    mpuIntExtiInit(gyro);
-}
-
 uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenominator, bool gyro_use_32khz)
 {
     float gyroSamplePeriod;
@@ -388,32 +387,12 @@ uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenomin
             gyro->gyroRateKHz = GYRO_RATE_32_kHz;
             gyroSamplePeriod = 31.5f;
         } else {
-            switch (gyro->mpuDetectionResult.sensor) {
-            case BMI_160_SPI:
-                gyro->gyroRateKHz = GYRO_RATE_3200_Hz;
-                gyroSamplePeriod = 312.0f;
-                break;
-            case ICM_20649_SPI:
-                gyro->gyroRateKHz = GYRO_RATE_9_kHz;
-                gyroSamplePeriod = 1000000.0f / 9000.0f;
-                break;
-            default:
-                gyro->gyroRateKHz = GYRO_RATE_8_kHz;
-                gyroSamplePeriod = 125.0f;
-                break;
-            }
+            gyro->gyroRateKHz = GYRO_RATE_8_kHz;
+            gyroSamplePeriod = 125.0f;
         }
     } else {
-        switch (gyro->mpuDetectionResult.sensor) {
-        case ICM_20649_SPI:
-            gyro->gyroRateKHz = GYRO_RATE_1100_Hz;
-            gyroSamplePeriod = 1000000.0f / 1100.0f;
-            break;
-        default:
-            gyro->gyroRateKHz = GYRO_RATE_1_kHz;
-            gyroSamplePeriod = 1000.0f;
-            break;
-        }
+        gyro->gyroRateKHz = GYRO_RATE_1_kHz;
+        gyroSamplePeriod = 1000.0f;
         gyroSyncDenominator = 1; // Always full Sampling 1khz
     }
 

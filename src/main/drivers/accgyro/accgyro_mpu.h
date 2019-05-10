@@ -81,6 +81,5 @@ typedef struct mpuDetectionResult_s {
 struct gyroDev_s;
 struct accDev_s;
 
-void    mpuGyroInit(struct gyroDev_s *gyro);
 void    mpuDetect(struct gyroDev_s *gyro);
 
