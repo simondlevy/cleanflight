@@ -44,7 +44,6 @@
 #include "drivers/bus_spi.h"
 #include "drivers/nvic.h"
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"

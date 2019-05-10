@@ -23,7 +23,6 @@
 #include "drivers/bus.h"
 #include "drivers/exti.h"
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/accgyro/accgyro_mpu.h"
 
 #define MPUx0x0_WHO_AM_I_CONST              (0x68) // MPU3050, 6000 and 6050
 #define MPU6000_WHO_AM_I_CONST              (0x68)
