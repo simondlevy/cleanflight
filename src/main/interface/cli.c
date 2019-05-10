@@ -4362,9 +4362,6 @@ static void cliMsc(char *cmdline)
         delay(1000);
         waitForSerialPortToFinishTransmitting(cliPort);
         stopPwmAllMotors();
-        if (mpuResetFn) {
-            mpuResetFn();
-        }
 
 #ifdef STM32F7
         *((__IO uint32_t*) BKPSRAM_BASE + 16) = MSC_MAGIC;

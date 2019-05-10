@@ -2,8 +2,6 @@
 
 typedef void (*mpuResetFnPtr)(void);
 
-extern mpuResetFnPtr mpuResetFn;
-
 typedef struct mpuConfiguration_s {
     mpuResetFnPtr resetFn;
 } mpuConfiguration_t;

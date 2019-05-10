@@ -151,6 +151,8 @@ enum accel_fsr_e {
     NUM_ACCEL_FSR
 };
 
+extern mpuResetFnPtr mpuResetFn;
+
 
 void     mpuDetect(struct gyroDev_s *gyro);
 uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenominator, bool gyro_use_32khz);
