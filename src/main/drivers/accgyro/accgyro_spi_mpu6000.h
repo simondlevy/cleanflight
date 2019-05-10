@@ -135,6 +135,23 @@
 // RF = Register Flag
 #define MPU_RF_DATA_RDY_EN (1 << 0)
 
+enum gyro_fsr_e {
+    INV_FSR_250DPS = 0,
+    INV_FSR_500DPS,
+    INV_FSR_1000DPS,
+    INV_FSR_2000DPS,
+    NUM_GYRO_FSR
+};
+
+enum accel_fsr_e {
+    INV_FSR_2G = 0,
+    INV_FSR_4G,
+    INV_FSR_8G,
+    INV_FSR_16G,
+    NUM_ACCEL_FSR
+};
+
+
 void     mpuDetect(struct gyroDev_s *gyro);
 uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenominator, bool gyro_use_32khz);
 bool     mpu6000SpiAccDetect(accDev_t *acc);
