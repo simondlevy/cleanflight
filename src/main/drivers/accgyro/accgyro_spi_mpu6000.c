@@ -195,29 +195,12 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     return true;
 }
 
-static void mpuGyroRead(gyroDev_t *gyro)
-{
-    uint8_t data[6];
-
-    const bool ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_GYRO_XOUT_H, data, 6);
-    if (!ack) {
-        return;
-    }
-
-    gyro->gyroADCRaw[X] = (int16_t)((data[0] << 8) | data[1]);
-    gyro->gyroADCRaw[Y] = (int16_t)((data[2] << 8) | data[3]);
-    gyro->gyroADCRaw[Z] = (int16_t)((data[4] << 8) | data[5]);
-}
-
-bool mpuGyroReadSPI(gyroDev_t *gyro)
+bool mpuGyroRead(gyroDev_t *gyro)
 {
     static const uint8_t dataToSend[7] = {MPU_RA_GYRO_XOUT_H | 0x80, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     uint8_t data[7];
 
-    const bool ack = spiBusTransfer(&gyro->bus, dataToSend, data, 7);
-    if (!ack) {
-        return false;
-    }
+    if (!spiBusTransfer(&gyro->bus, dataToSend, data, 7)) return false;
 
     gyro->gyroADCRaw[X] = (int16_t)((data[1] << 8) | data[2]);
     gyro->gyroADCRaw[Y] = (int16_t)((data[3] << 8) | data[4]);
@@ -230,10 +213,7 @@ static bool mpuAccRead(accDev_t *acc)
 {
     uint8_t data[6];
 
-    const bool ack = busReadRegisterBuffer(&acc->bus, MPU_RA_ACCEL_XOUT_H, data, 6);
-    if (!ack) {
-        return false;
-    }
+    if (!busReadRegisterBuffer(&acc->bus, MPU_RA_ACCEL_XOUT_H, data, 6)) return false;
 
     acc->ADCRaw[X] = (int16_t)((data[0] << 8) | data[1]);
     acc->ADCRaw[Y] = (int16_t)((data[2] << 8) | data[3]);
@@ -332,12 +312,6 @@ void mpu6000SpiGyroInit(gyroDev_t *gyro)
     delayMicroseconds(1);
 
     spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_FAST);  // 18 MHz SPI clock
-
-    mpuGyroRead(gyro);
-
-    if (((int8_t)gyro->gyroADCRaw[1]) == -1 && ((int8_t)gyro->gyroADCRaw[0]) == -1) {
-        failureMode(FAILURE_GYRO_INIT_FAILED);
-    }
 }
 
 bool mpu6000SpiAccDetect(accDev_t *acc)
@@ -351,7 +325,7 @@ bool mpu6000SpiAccDetect(accDev_t *acc)
 bool mpu6000SpiGyroDetect(gyroDev_t *gyro)
 {
     gyro->initFn = mpu6000SpiGyroInit;
-    gyro->readFn = mpuGyroReadSPI;
+    gyro->readFn = mpuGyroRead;
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
 
@@ -367,8 +341,16 @@ void mpuDetect(gyroDev_t *gyro)
     detectSPISensorsAndUpdateDetectionResult(gyro);
 }
 
+uint8_t lpfGlobal;
+uint8_t gyroSyncDenominatorGlobal;
+bool    gyro_use_32khz_global;
+
 uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenominator, bool gyro_use_32khz)
 {
+    lpfGlobal = lpf;
+    gyroSyncDenominatorGlobal = gyroSyncDenominator;
+    gyro_use_32khz_global = gyro_use_32khz;
+
     float gyroSamplePeriod;
 
     if (lpf == GYRO_HARDWARE_LPF_NORMAL || lpf == GYRO_HARDWARE_LPF_EXPERIMENTAL) {

@@ -51,10 +51,15 @@ static void myputs(char * buf)
     }
 }
 
+
 void mydebug(void)
 {
-    //extern void tfp_sprintf(char* s,char *fmt, ...);
-    //char buf[100];
-    //tfp_sprintf(buf, "%d\n", foo);
-    //myputs(buf);
+    extern uint8_t lpfGlobal;
+    extern uint8_t gyroSyncDenominatorGlobal;
+    extern bool    gyro_use_32khz_global;
+
+    extern void tfp_sprintf(char* s,char *fmt, ...);
+    char buf[100];
+    tfp_sprintf(buf, "lpf: %d    sync: %d    32khz: %d\n", lpfGlobal, gyroSyncDenominatorGlobal, gyro_use_32khz_global);
+    myputs(buf);
 }
